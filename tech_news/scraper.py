@@ -2,6 +2,7 @@ import requests
 import time
 from parsel import Selector
 import re
+from tech_news.database import create_news
 
 
 # Requisito 1
@@ -45,9 +46,7 @@ def scrape_news(html_content):
     https://pythonexamples.org/
     python-regex-extract-find-all-the-numbers-in-string/"""
     reading_time = int(re.findall("[0-9]+", reading_time_str)[0])
-    summary = selector.css(
-        ".entry-content > p:first-of-type *::text"
-    ).getall()
+    summary = selector.css(".entry-content > p:first-of-type *::text").getall()
     category = selector.css(".category-style .label::text").get()
 
     return {
@@ -63,5 +62,22 @@ def scrape_news(html_content):
 
 # Requisito 5
 def get_tech_news(amount):
-    """Seu código deve vir aqui"""
-    raise NotImplementedError
+    url = "https://blog.betrybe.com"
+    news_list = []
+
+    while len(news_list) < amount:
+        html_content = fetch(url)
+        news_list.extend(scrape_updates(html_content))
+        url = scrape_next_page_link(html_content)
+
+    news_content = news_list[:amount]
+    scraped_news_list = []
+    for news_item in news_content:
+        fetched_news = fetch(news_item)
+        scraped_news = scrape_news(fetched_news)
+        scraped_news_list.append(scraped_news)
+    news_list = scraped_news_list
+
+    create_news(news_list)
+
+    return news_list
